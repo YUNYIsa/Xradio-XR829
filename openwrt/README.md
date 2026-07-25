@@ -9,6 +9,9 @@ Allwinner (sunxi) BSP it originally targeted.
 
 ```
 openwrt/
+├── src/                                          # integrated driver source
+│   ├── Makefile  Kconfig  license
+│   ├── include/  umac/  wlan/
 ├── package/kernel/xradio-xr829/Makefile          # kmod-xradio-xr829
 ├── package/firmware/xradio-xr829-firmware/        # /lib/firmware blobs
 │   ├── Makefile
@@ -22,7 +25,7 @@ openwrt/
 The only hard couplings to the Allwinner BSP were in the platform layer.
 They have been removed so the module builds against a mainline kernel:
 
-* `wlan/platform.c`
+* `src/wlan/platform.c`
   * Dropped `sunxi_wlan_set_power()`, `sunxi_wlan_get_bus_index()`,
     `sunxi_wlan_get_oob_irq()` and `<linux/sunxi-gpio.h>`.
   * Power/enumeration are now delegated to the MMC subsystem
@@ -31,7 +34,7 @@ They have been removed so the module builds against a mainline kernel:
   * The out-of-band host-wake IRQ is resolved from the SDIO function's
     device-tree node with `of_irq_get()`, and `wakeup-source` enables
     wake-on-WLAN.
-* `wlan/platform.h`
+* `src/wlan/platform.h`
   * Dropped the `sunxi_mmc_*` / `sunxi_mci_*` / `sw_mci_*` externs and
     `MCI_RESCAN_CARD`. `MCI_CHECK_READY()` is now a harmless fallback.
 
@@ -41,17 +44,14 @@ builds a single `xr829.ko`.
 
 ## How to build
 
-1. Add this repository as a package feed (or copy the two package
-   directories into your OpenWrt tree under `package/`):
-
-   ```
-   # feeds.conf.default (example)
-   src-git xradio https://github.com/YUNYIsa/Xradio-XR829.git
-   ```
-
-   The kernel package Makefile fetches the driver sources from GitHub. Pin
-   `PKG_SOURCE_VERSION` (and refresh `PKG_MIRROR_HASH`) to a known-good
-   commit for reproducible builds.
+1. Copy the whole `openwrt/` directory into your OpenWrt tree (or add it as a
+   feed). It is self-contained: the driver source lives in `openwrt/src/` and
+   the kernel package builds directly from it, so there is **no download step**
+   (no `PKG_SOURCE` / `dl/`). Its `Build/Prepare` copies the in-tree
+   `Makefile`, `Kconfig`, `license`, `include/`, `umac/` and `wlan/` from
+   `openwrt/src/` into the build directory. Keep the package directories
+   alongside `openwrt/src/` so the relative path to the source tree stays
+   valid.
 
 2. Enable the packages:
 
