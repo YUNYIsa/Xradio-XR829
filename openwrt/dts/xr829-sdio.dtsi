@@ -1,0 +1,75 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Example device-tree wiring for the XRadio XR829 SDIO Wi-Fi chip on an
+ * OpenWrt / mainline kernel.
+ *
+ * This is a TEMPLATE, not a ready-to-flash overlay: adjust the MMC
+ * controller phandle (&mmcX), the GPIO controller/pin numbers, regulator
+ * and clock names to match your board.  Include the contents of the
+ * xr829 { ... } node inside your board's SDIO host node.
+ *
+ * How it works on mainline (no Allwinner BSP required):
+ *   - The chip is powered and reset by an "mmc-pwrseq-simple" bound to the
+ *     SDIO host.  The MMC core drives the reset GPIO and (optionally) a 32k
+ *     clock, then enumerates the SDIO function -- so the driver itself does
+ *     not toggle power or rescan the bus.
+ *   - The out-of-band host-wake line is declared as an "interrupts"
+ *     property on the SDIO function node; the driver resolves it with
+ *     of_irq_get().  Add "wakeup-source" to enable wake-on-WLAN.
+ */
+
+/ {
+	/* Reset/enable sequencing for the WLAN chip. */
+	wlan_pwrseq: wlan-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		/* WL_REG_ON / chip-enable, active high; replace &pio + pin. */
+		reset-gpios = <&pio 6 10 GPIO_ACTIVE_LOW>;
+		/* Optional external 32.768kHz low-power clock. */
+		/* clocks = <&osc32k>; */
+		/* clock-names = "ext_clock"; */
+		post-power-on-delay-ms = <200>;
+	};
+
+	/* Optional dedicated 3V3 rail for the module (if not on vmmc). */
+	/*
+	wlan_reg: wlan-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "wlan-3v3";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		gpio = <&pio 6 11 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-boot-on;
+	};
+	*/
+};
+
+/* Attach the chip to whichever MMC/SDIO controller it is wired to. */
+&mmc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	pinctrl-names = "default";
+	/* pinctrl-0 = <&mmc1_pins>; */
+
+	vmmc-supply = <&reg_vcc3v3>;
+	/* vqmmc-supply = <&reg_vcc1v8>; */          /* if using 1.8V IO */
+	mmc-pwrseq = <&wlan_pwrseq>;
+
+	bus-width = <4>;
+	non-removable;
+	cap-sdio-irq;
+	keep-power-in-suspend;
+	status = "okay";
+
+	xr829: wifi@1 {
+		reg = <1>;                            /* SDIO function 1 */
+		compatible = "xradio,xr829";
+
+		/* Out-of-band host wake IRQ (WL_HOST_WAKE). */
+		interrupt-parent = <&pio>;
+		interrupts = <6 12 IRQ_TYPE_LEVEL_HIGH>;
+		/* Enable to wake the system on WLAN activity. */
+		/* wakeup-source; */
+	};
+};

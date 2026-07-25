@@ -4,6 +4,13 @@
  * Copyright (c) 2013, XRadio
  * Author: XRadio
  *
+ * OpenWrt / mainline port: the Allwinner BSP MMC rescan / ready helpers
+ * (sunxi_mmc_*, sunxi_mci_*, sw_mci_*) do not exist on a mainline kernel.
+ * SDIO enumeration and power sequencing are handled by the MMC core via
+ * "mmc-pwrseq" and a statically declared SDIO node in the device tree, so
+ * MCI_CHECK_READY is provided as a harmless fallback and MCI_RESCAN_CARD is
+ * no longer needed.
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
@@ -17,31 +24,12 @@
 #include <linux/kernel.h>
 #include <linux/mmc/host.h>
 
-/* Select hardware platform.*/
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))
-
-extern void sunxi_mmc_rescan_card(unsigned ids);
-extern int sunxi_mmc_check_r1_ready(struct mmc_host *mmc, unsigned ms);
-
-#define MCI_RESCAN_CARD(id)  sunxi_mmc_rescan_card(id)
-#define MCI_CHECK_READY(h, t)     sunxi_mmc_check_r1_ready(h, t)
-
-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
-#define PLAT_ALLWINNER_SUNXI
-#define MCI_RESCAN_CARD(id, ins)  sunxi_mci_rescan_card(id, ins)
-#define MCI_CHECK_READY(h, t)     sunxi_mci_check_r1_ready(h, t)
-
-extern void sunxi_mci_rescan_card(unsigned id, unsigned insert);
-extern int sunxi_mci_check_r1_ready(struct mmc_host *mmc, unsigned ms);
-
-#else
-#define PLAT_ALLWINNER_SUN6I
-#define MCI_RESCAN_CARD(id, ins)  sw_mci_rescan_card(id, ins)
-#define MCI_CHECK_READY(h, t)     sw_mci_check_r1_ready(h, t)
-
-extern void sw_mci_rescan_card(unsigned id, unsigned insert);
-extern int sw_mci_check_r1_ready(struct mmc_host *mmc, unsigned ms);
-#endif
+/*
+ * The WLAN function is expected to be ready as soon as the MMC core has
+ * enumerated it (mmc-pwrseq handles reset/power timing), so there is no
+ * vendor-specific "card ready" poll to perform.
+ */
+#define MCI_CHECK_READY(h, t)     (0)
 
 int xradio_get_syscfg(void);
 
