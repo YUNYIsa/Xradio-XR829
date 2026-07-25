@@ -15,15 +15,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=xradio-xr829
+PKG_VERSION:=1
 PKG_RELEASE:=1
 
-# Build straight from this GitHub repository.  Pin PKG_SOURCE_VERSION to a
-# known-good commit and refresh PKG_MIRROR_HASH accordingly.
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/YUNYIsa/Xradio-XR829.git
-PKG_SOURCE_DATE:=2024-01-01
-PKG_SOURCE_VERSION:=HEAD
-PKG_MIRROR_HASH:=skip
+# Build straight from the driver sources that are integrated in this
+# repository, four directories up from this package.  There is NO download
+# step (no PKG_SOURCE / dl/): Build/Prepare copies the in-tree source into
+# $(PKG_BUILD_DIR) below.
+XRADIO_SRC_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))../../../..)
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=license
@@ -61,6 +60,16 @@ XRADIO_MAKE_OPTS:= \
 	CONFIG_XRADIO_VERBOSE_DEBUG=n \
 	CONFIG_XRADIO_DEBUGFS=n \
 	CONFIG_XRMAC_DEBUGFS=n
+
+define Build/Prepare
+	mkdir -p $(PKG_BUILD_DIR)
+	$(CP) $(XRADIO_SRC_DIR)/Makefile \
+	      $(XRADIO_SRC_DIR)/Kconfig \
+	      $(XRADIO_SRC_DIR)/include \
+	      $(XRADIO_SRC_DIR)/umac \
+	      $(XRADIO_SRC_DIR)/wlan \
+	      $(PKG_BUILD_DIR)/
+endef
 
 define Build/Compile
 	+$(KERNEL_MAKE) M=$(PKG_BUILD_DIR) \

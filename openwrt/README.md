@@ -41,17 +41,14 @@ builds a single `xr829.ko`.
 
 ## How to build
 
-1. Add this repository as a package feed (or copy the two package
-   directories into your OpenWrt tree under `package/`):
-
-   ```
-   # feeds.conf.default (example)
-   src-git xradio https://github.com/YUNYIsa/Xradio-XR829.git
-   ```
-
-   The kernel package Makefile fetches the driver sources from GitHub. Pin
-   `PKG_SOURCE_VERSION` (and refresh `PKG_MIRROR_HASH`) to a known-good
-   commit for reproducible builds.
+1. Copy the two package directories into your OpenWrt tree under
+   `package/` (for example symlink or copy `openwrt/package/kernel/xradio-xr829`
+   and `openwrt/package/firmware/xradio-xr829-firmware`). The kernel package
+   builds directly from the driver sources integrated in this repository, so
+   there is **no download step** (no `PKG_SOURCE` / `dl/`): its `Build/Prepare`
+   copies the in-tree `Makefile`, `Kconfig`, `include/`, `umac/` and `wlan/`
+   into the build directory. Keep the package directories inside this repo so
+   the relative path to the source tree stays valid.
 
 2. Enable the packages:
 
