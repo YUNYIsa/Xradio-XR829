@@ -19,10 +19,11 @@ PKG_VERSION:=1
 PKG_RELEASE:=1
 
 # Build straight from the driver sources that are integrated in this
-# repository, four directories up from this package.  There is NO download
-# step (no PKG_SOURCE / dl/): Build/Prepare copies the in-tree source into
-# $(PKG_BUILD_DIR) below.
-XRADIO_SRC_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))../../../..)
+# repository under openwrt/src.  There is NO download step (no PKG_SOURCE /
+# dl/): Build/Prepare copies the in-tree source into $(PKG_BUILD_DIR) below.
+# The path is resolved relative to this Makefile so the whole openwrt/ tree
+# can be copied into any OpenWrt feed as a self-contained package.
+XRADIO_SRC_DIR:=$(realpath $(dir $(lastword $(MAKEFILE_LIST)))../../../src)
 
 PKG_LICENSE:=GPL-2.0-only
 PKG_LICENSE_FILES:=license
@@ -65,6 +66,7 @@ define Build/Prepare
 	mkdir -p $(PKG_BUILD_DIR)
 	$(CP) $(XRADIO_SRC_DIR)/Makefile \
 	      $(XRADIO_SRC_DIR)/Kconfig \
+	      $(XRADIO_SRC_DIR)/license \
 	      $(XRADIO_SRC_DIR)/include \
 	      $(XRADIO_SRC_DIR)/umac \
 	      $(XRADIO_SRC_DIR)/wlan \
